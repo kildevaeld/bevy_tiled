@@ -71,14 +71,14 @@ impl AssetLoader<Map> for TiledMapLoader {
                                     && lookup_y < map.height as usize
                                 {
                                     // New Tiled crate code:
-                                    // let map_tile = match &layer.tiles {
-                                    //     tiled::LayerData::Finite(tiles) => {
-                                    //         &tiles[lookup_y][lookup_x]
-                                    //     },
-                                    //     _ => panic!("Infinte maps not supported"),
-                                    // };
+                                    let map_tile = match &layer.tiles {
+                                        tiled::LayerData::Finite(tiles) => {
+                                            &tiles[lookup_y][lookup_x]
+                                        }
+                                        _ => panic!("Infinte maps not supported"),
+                                    };
 
-                                    let map_tile = layer.tiles[lookup_y][lookup_x];
+                                    // let map_tile = layer.tiles[lookup_y][lookup_x];
 
                                     let tile = map_tile.gid;
                                     if tile < tileset.first_gid
