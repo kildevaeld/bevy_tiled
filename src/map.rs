@@ -69,17 +69,25 @@ impl Map {
         let y = ((-(pos.y()) / half_height) - (pos.x() / half_width)) / 2.0;
         Vec2::new(x.round(), y.round())
     }
-    pub fn center(&self, origin : &Translation) -> Translation {
+    pub fn center(&self, origin: &Translation, scale: f32) -> Translation {
         let tile_size = Vec2::new(self.map.tile_width as f32, self.map.tile_height as f32);
         let map_center = Vec2::new(self.map.width as f32 / 2.0, self.map.height as f32 / 2.0);
         match self.map.orientation {
             tiled::Orientation::Orthogonal => {
                 let center = Map::project_ortho(map_center, tile_size.x(), tile_size.y());
-                Translation::new(origin.x() - center.x() * 4.0, origin.y() - center.y() * 4.0, origin.z())
+                Translation::new(
+                    origin.x() - center.x() * scale,
+                    origin.y() - center.y() * scale,
+                    origin.z(),
+                )
             }
             tiled::Orientation::Isometric => {
                 let center = Map::project_iso(map_center, tile_size.x(), tile_size.y());
-                Translation::new(origin.x() - center.x() * 4.0, origin.y()  -center.y() * 4.0, origin.z())
+                Translation::new(
+                    origin.x() - center.x() * scale,
+                    origin.y() - center.y() * scale,
+                    origin.z(),
+                )
             }
 
             _ => panic!("Unsupported orientation {:?}", self.map.orientation),
@@ -93,7 +101,8 @@ pub struct TiledMapComponents {
     pub map_asset: Handle<Map>,
     pub materials: HashMap<u32, Handle<ColorMaterial>>,
     pub center: bool,
-    pub origin : Translation
+    pub origin: Translation,
+    pub scale: Scale,
 }
 
 impl Default for TiledMapComponents {
@@ -102,7 +111,8 @@ impl Default for TiledMapComponents {
             map_asset: Handle::default(),
             materials: HashMap::default(),
             center: false,
-            origin : Translation::new(0., 0., 0.)
+            origin: Translation::new(0., 0., 0.),
+            scale: Scale(1.0),
         }
     }
 }
@@ -176,7 +186,8 @@ pub fn process_loaded_tile_maps(
         &bool,
         &Handle<Map>,
         &mut HashMap<u32, Handle<ColorMaterial>>,
-        &Translation
+        &Translation,
+        &Scale,
     )>,
 ) {
     let mut changed_maps = HashSet::<Handle<Map>>::new();
@@ -200,7 +211,7 @@ pub fn process_loaded_tile_maps(
     for changed_map in changed_maps.iter() {
         let map = maps.get_mut(changed_map).unwrap();
 
-        for (_, _, _, mut materials_map, _) in &mut query.iter() {
+        for (_, _, _, mut materials_map, _, _) in &mut query.iter() {
             for tileset in &map.map.tilesets {
                 if !materials_map.contains_key(&tileset.first_gid) {
                     let texture_path =
@@ -225,12 +236,12 @@ pub fn process_loaded_tile_maps(
         }
     }
 
-    for (_, center, map_handle, materials_map, origin) in &mut query.iter() {
+    for (_, center, map_handle, materials_map, origin, scale) in &mut query.iter() {
         if new_meshes.contains_key(map_handle) {
             let map = maps.get(map_handle).unwrap();
 
             let translation = if *center {
-                map.center(origin)
+                map.center(origin, **scale)
             } else {
                 *origin
             };
@@ -256,6 +267,7 @@ pub fn process_loaded_tile_maps(
                         // Instead for now spawn a new entity per chunk.
                         commands.spawn(ChunkComponents {
                             chunk: TileMapChunk {
+                                scale: **scale,
                                 // TODO: Support more layers here..
                                 layer_id: layer_id as f32,
                             },

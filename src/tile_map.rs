@@ -6,6 +6,7 @@ use bevy::render::renderer::{RenderResource, RenderResources};
 #[render_resources(from_self)]
 pub struct TileMapChunk {
     pub layer_id: f32,
+    pub scale: f32,
 }
 
 // SAFE: sprite is repr(C) and only consists of byteables
