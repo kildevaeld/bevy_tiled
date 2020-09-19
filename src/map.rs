@@ -263,7 +263,6 @@ pub fn process_loaded_tile_maps(
                     for (_, _, mesh) in chunk_mesh_list.iter() {
                         // TODO: Sadly bevy doesn't support multiple meshes on a single entity with multiple materials.
                         // Change this once it does.
-
                         // Instead for now spawn a new entity per chunk.
                         commands.spawn(ChunkComponents {
                             chunk: TileMapChunk {
